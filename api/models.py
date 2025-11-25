@@ -1,4 +1,6 @@
 from django.db import models
+import binascii
+import os
 
 
 class Member(models.Model):
@@ -46,6 +48,34 @@ class Member(models.Model):
         Required for DRF permission classes compatibility.
         """
         return True
+
+
+class Token(models.Model):
+    """
+    Authorization token for Member authentication.
+    """
+    key = models.CharField(max_length=40, unique=True)
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.CASCADE,
+        related_name='tokens'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tokens'
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = self.generate_key()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_key(cls):
+        return binascii.hexlify(os.urandom(20)).decode()
+
+    def __str__(self):
+        return self.key
 
 
 class Message(models.Model):
