@@ -37,7 +37,7 @@ export const getCurrentUser = async () => {
   const token = getToken();
   const response = await instance.get('/api/auth/me/', {
     headers: {
-      Authorization: `Token ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
   return response.data;
