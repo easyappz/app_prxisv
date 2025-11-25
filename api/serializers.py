@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password, check_password
-from .models import Member, Token
+from .models import Member, Token, Message
 
 
 class MessageSerializer(serializers.Serializer):
@@ -59,3 +59,32 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['member'] = member
         return attrs
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Message model - returns message data with username.
+    """
+    username = serializers.CharField(source='member.username', read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ['id', 'username', 'text', 'created_at']
+        read_only_fields = ['id', 'username', 'created_at']
+
+
+class CreateMessageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a new message.
+    """
+    class Meta:
+        model = Message
+        fields = ['text']
+
+    def create(self, validated_data):
+        member = self.context['request'].user
+        message = Message.objects.create(
+            member=member,
+            text=validated_data['text']
+        )
+        return message

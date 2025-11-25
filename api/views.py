@@ -3,8 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from .serializers import MessageSerializer, MemberSerializer, RegisterSerializer, LoginSerializer
-from .models import Member, Token
+from .serializers import (
+    MessageSerializer,
+    MemberSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    ChatMessageSerializer,
+    CreateMessageSerializer
+)
+from .models import Member, Token, Message
 
 
 class HelloView(APIView):
@@ -158,3 +165,67 @@ class MeView(APIView):
             MemberSerializer(member).data,
             status=status.HTTP_200_OK
         )
+
+
+class MessagesListView(APIView):
+    """
+    API endpoint to get all chat messages.
+    GET /api/messages/
+    """
+
+    @extend_schema(
+        responses={
+            200: ChatMessageSerializer(many=True),
+            401: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}
+        },
+        description="Retrieve all chat messages with user information"
+    )
+    def get(self, request):
+        member = TokenAuthentication.authenticate(request)
+        if not member:
+            return Response(
+                {"detail": "Unauthorized - invalid or missing token"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        messages = Message.objects.select_related('member').order_by('created_at')
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MessageCreateView(APIView):
+    """
+    API endpoint to create a new message.
+    POST /api/messages/
+    """
+
+    @extend_schema(
+        request=CreateMessageSerializer,
+        responses={
+            201: ChatMessageSerializer,
+            400: {'type': 'object', 'properties': {'detail': {'type': 'string'}}},
+            401: {'type': 'object', 'properties': {'detail': {'type': 'string'}}}
+        },
+        description="Create and send a new chat message"
+    )
+    def post(self, request):
+        member = TokenAuthentication.authenticate(request)
+        if not member:
+            return Response(
+                {"detail": "Unauthorized - invalid or missing token"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        request.user = member
+        serializer = CreateMessageSerializer(data=request.data, context={'request': request})
+        
+        if not serializer.is_valid():
+            error_message = next(iter(serializer.errors.values()))[0] if serializer.errors else "Validation error"
+            return Response(
+                {"detail": str(error_message)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        message = serializer.save()
+        response_serializer = ChatMessageSerializer(message)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
