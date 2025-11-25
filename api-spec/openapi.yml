@@ -58,6 +58,28 @@ components:
         - username
         - password
 
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Message ID
+        username:
+          type: string
+          description: Username of the message sender
+        text:
+          type: string
+          description: Message text content
+        created_at:
+          type: string
+          format: date-time
+          description: Message creation timestamp
+      required:
+        - id
+        - username
+        - text
+        - created_at
+
     Error:
       type: object
       properties:
@@ -72,3 +94,5 @@ paths:
     $ref: './paths/auth.yml#/login'
   /auth/me/:
     $ref: './paths/auth.yml#/me'
+  /messages/:
+    $ref: './paths/messages.yml#/list'
