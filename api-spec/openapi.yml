@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: API Specification
+  version: 1.0.0
+  description: API documentation for the application
+
+servers:
+  - url: /api
+    description: API server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: User ID
+        username:
+          type: string
+          description: Username
+      required:
+        - id
+        - username
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Authorization token
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+        - token
+        - user
+
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Username
+        password:
+          type: string
+          format: password
+          description: Password
+      required:
+        - username
+        - password
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+
+paths:
+  /auth/register/:
+    $ref: './paths/auth.yml#/register'
+  /auth/login/:
+    $ref: './paths/auth.yml#/login'
+  /auth/me/:
+    $ref: './paths/auth.yml#/me'
