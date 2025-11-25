@@ -8,7 +8,7 @@ const TOKEN_KEY = 'authToken';
  * Save authentication token to localStorage
  * @param {string} token - The authentication token to save
  */
-export const saveToken = (token) => {
+export const setToken = (token) => {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
   }
